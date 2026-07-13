@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../Level1_Naive/Level1_Naive.csproj" Id="b8afcb89-72a5-43d0-8ac7-3cc8e81eca87" />
+  <Project Path="../Shared/Shared.csproj" Id="3c267e52-909b-4765-adfb-1ae932edeb69" />
+  <Project Path="DataGenerator.csproj" />
+</Solution>
