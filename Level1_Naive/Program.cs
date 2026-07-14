@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Text;
 
 Console.WriteLine("====== Level 1: Naive Implementation ======");
-Console.WriteLine($"File: {GlobalConstants.FilePath_1M}");
+Console.WriteLine($"File: {GlobalConstants.FilePath_10M}");
 Console.WriteLine();
 
 // Verify if the file exists before attempting to read it
-if (!File.Exists(GlobalConstants.FilePath_1M))
+if (!File.Exists(GlobalConstants.FilePath_10M))
 {
-    Console.WriteLine($"File not found: {GlobalConstants.FilePath_1M}");
+    Console.WriteLine($"File not found: {GlobalConstants.FilePath_10M}");
 }
 
 // Force GC before measurement
@@ -19,7 +19,7 @@ GC.Collect();
 
 var stopwatch = Stopwatch.StartNew();
 
-var lines = File.ReadLines(GlobalConstants.FilePath_1M, Encoding.UTF8);
+var lines = File.ReadLines(GlobalConstants.FilePath_10M, Encoding.UTF8);
 var result = lines.Select(line =>
 {
     var splitext = line.Split(";");

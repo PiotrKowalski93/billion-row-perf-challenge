@@ -74,5 +74,11 @@ namespace Shared
             }
         }
 
+        public static string FormatOutput<T>(IEnumerable<KeyValuePair<string, T>> stats)
+            where T : StationStats
+        {
+            return "{" + string.Join(", ", stats.Select(x => $"{x.Key}={x.Value}")) + "}";
+        }
+
     }
 }
