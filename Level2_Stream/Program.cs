@@ -19,7 +19,7 @@ GC.Collect();
 
 var stopwatch = Stopwatch.StartNew();
 
-using var reader = new StreamReader(GlobalConstants.FilePath_10M, Encoding.UTF8, true, 3076);
+using var reader = new StreamReader(GlobalConstants.FilePath_10M, Encoding.UTF8, true, 24576);
 
 string line;
 int lineCounter = 0;
