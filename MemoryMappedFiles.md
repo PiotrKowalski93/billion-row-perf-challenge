@@ -15,8 +15,6 @@ Virtual Memory Mapping
 Process Address Space
 ```
 
----
-
 ## Why Use MMF?
 
 ### Benefits
@@ -36,8 +34,6 @@ Process Address Space
 * Shared memory IPC
 * Scientific computing
 
----
-
 ## How It Works
 
 1. The process requests a mapping (`mmap` on Linux, `MemoryMappedFile` on .NET).
@@ -48,8 +44,6 @@ Process Address Space
 6. Subsequent accesses behave like normal memory reads/writes.
 
 This behavior is known as **lazy loading**.
-
----
 
 ## Key Concepts
 
@@ -71,8 +65,6 @@ Execution Continues
 
 Page faults are expensive because they require kernel intervention.
 
----
-
 ### Demand Paging
 
 Pages are loaded only when accessed.
@@ -82,8 +74,6 @@ Benefits:
 * Faster startup
 * Lower memory consumption
 * Efficient handling of huge files
-
----
 
 ### Shared vs Private Mapping
 
@@ -115,8 +105,6 @@ OS Creates Private Copy
 
 Other processes do not see the modification.
 
----
-
 ## Performance Characteristics
 
 ### Good For
@@ -133,8 +121,6 @@ Other processes do not see the modification.
 * Large mappings can increase TLB pressure.
 * Performance depends heavily on storage speed.
 
----
-
 ## MMF vs Traditional File I/O
 
 | Feature           | Memory-Mapped File | Read/Write API |
@@ -145,8 +131,6 @@ Other processes do not see the modification.
 | OS Page Cache     | Automatic          | Automatic      |
 | IPC Support       | Excellent          | Poor           |
 | Complexity        | Moderate           | Low            |
-
----
 
 ## .NET Example
 
@@ -160,8 +144,6 @@ long value = accessor.ReadInt64(0);
 
 The file content becomes accessible through a memory view rather than explicit file reads.
 
----
-
 ## Low-Latency Considerations
 
 For latency-sensitive systems:
@@ -171,8 +153,6 @@ For latency-sensitive systems:
 * Use huge pages where appropriate.
 * Measure major/minor page faults.
 * Be aware that page faults can introduce microsecond-to-millisecond latency spikes.
-
----
 
 ## Summary
 
