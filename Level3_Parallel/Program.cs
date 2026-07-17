@@ -22,7 +22,7 @@ GC.Collect();
 
 var stopwatch = Stopwatch.StartNew();
 
-var threadCount = Environment.ProcessorCount;
+var threadCount = Environment.ProcessorCount * 2;
 var chunks = ComputeChunks(FilePath, threadCount);
 
 Console.WriteLine($"Thread Count: {threadCount}");
@@ -40,13 +40,14 @@ Parallel.For(0, threadCount, threadIndex =>
     var endByte = chunks[threadIndex + 1];
     var chunkSize = (int)(endByte - startByte);
 
-    var buffer = new byte[chunkSize];
+    var buffer = new byte[chunkSize]; // huge allocation
     using (var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
     {
         stream.Seek(startByte, SeekOrigin.Begin);
         stream.ReadExactly(buffer, 0, chunkSize);
     }
 
+    // huge allocation again
     var text = Encoding.UTF8.GetString(buffer);
     var lineStart = 0;
 
@@ -86,12 +87,23 @@ var totalLines = lineCounters.Sum();
 
 stopwatch.Stop();
 
+var output = ResultLogger.FormatOutput(finalDict.OrderBy(kvp => kvp.Key));
+
+Console.WriteLine();
+Console.WriteLine($"Result: {output}");
+Console.WriteLine();
+Console.WriteLine($"Processed {totalLines} rows");
+Console.WriteLine($"Found {finalDict.Count()} unique stations");
+Console.WriteLine($"Execution Time: {stopwatch.Elapsed} ms");
+
+ResultLogger.SaveResult("Multithread", output, stopwatch.Elapsed, totalLines, finalDict.Count());
+
 static void ProcessLine(ReadOnlySpan<char> line, Dictionary<string, StationStats> localDic)
 {
     var separationIndex = line.IndexOf(";");
     if(separationIndex < 0) return;
 
-    var stationName = line[..separationIndex].ToString();
+    var stationName = line[..separationIndex].ToString(); // new allocation
     var temperature = double.Parse(line[(separationIndex + 1)..]);
 
     if (!localDic.TryGetValue(stationName, out var stats))
