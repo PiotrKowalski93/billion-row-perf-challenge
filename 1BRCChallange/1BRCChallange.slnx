@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../Benchmarks/Benchmarks.csproj" Id="7349137c-3318-406c-a9b0-c7f933fa70c4" />
   <Project Path="../Level1_Naive/Level1_Naive.csproj" Id="b8afcb89-72a5-43d0-8ac7-3cc8e81eca87" />
   <Project Path="../Level2_Stream/Level2_Stream.csproj" Id="c4b909c6-79c6-4fee-ac1b-6b4526a66945" />
   <Project Path="../Level3_Parallel/Level3_Parallel.csproj" Id="474db7d5-7800-49fb-85f6-54c15cd0d0df" />
