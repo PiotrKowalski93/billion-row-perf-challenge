@@ -1,9 +1,9 @@
 <Solution>
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/1BRCChallange/DataGenerator.csproj" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Benchmarks/Benchmarks.csproj" Id="7349137c-3318-406c-a9b0-c7f933fa70c4" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Level1_Naive/Level1_Naive.csproj" Id="b8afcb89-72a5-43d0-8ac7-3cc8e81eca87" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Level2_Stream/Level2_Stream.csproj" Id="c4b909c6-79c6-4fee-ac1b-6b4526a66945" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Level3_Parallel/Level3_Parallel.csproj" Id="474db7d5-7800-49fb-85f6-54c15cd0d0df" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Level4_MMF/Level4_MMF.csproj" Id="d1724f9e-f22d-4a95-9215-774194eed48e" />
-  <Project Path="../../../../../../Documents/GitHub/billion-row-perf-challenge/Shared/Shared.csproj" Id="3c267e52-909b-4765-adfb-1ae932edeb69" />
+  <Project Path="../Benchmarks/Benchmarks.csproj" />
+  <Project Path="../Level1_Naive/Level1_Naive.csproj" />
+  <Project Path="../Level2_Stream/Level2_Stream.csproj" />
+  <Project Path="../Level3_Parallel/Level3_Parallel.csproj" />
+  <Project Path="../Level4_MMF/Level4_MMF.csproj" />
+  <Project Path="../Shared/Shared.csproj" />
+  <Project Path="DataGenerator.csproj" />
 </Solution>
