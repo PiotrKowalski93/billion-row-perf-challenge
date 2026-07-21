@@ -45,11 +45,46 @@ unsafe
         byte* basePtr = null;
         accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref basePtr);
 
+        // I ommited calculating BOM
         var chunkSize = fileSize / threadCount;
 
         Parallel.For(0, threadCount, threadIndex =>
         {
+            // Calculating chunk sizes
+            var startOffset = threadIndex * chunkSize;
+            var endOffset = (threadIndex == threadCount - 1) ? fileSize : startOffset + chunkSize;
 
+            // Adjust startOffset to the next newline character to avoid splitting lines
+            while (startOffset > fileSize && basePtr[startOffset - 1] != '\n')
+            {
+                startOffset++;
+            }
+
+            // Adjust endOffset to the previous newline character to avoid splitting lines
+            while (endOffset < fileSize && basePtr[endOffset - 1] != '\n')
+            {
+                endOffset++;
+            }
+
+            var localStats = new Dictionary<int, (string Name, StationStatsStruct Stats)>();
+            long localLineCounter = 0;
+            var position = startOffset;
+
+            // Each thread processes its chunk of the file
+            while (position < endOffset)
+            {
+                // We need to find semicolon position
+                var semicolonPos = position;
+                while (semicolonPos < endOffset && basePtr[semicolonPos] != ';')
+                {
+                    semicolonPos++;
+                }
+
+                if (semicolonPos >= endOffset)
+                {
+                    break; // No more semicolons in this chunk
+                }
+            }
         });
     }
     finally
