@@ -84,6 +84,23 @@ unsafe
                 {
                     break; // No more semicolons in this chunk
                 }
+
+                // Find new line position
+                var newLinePos = semicolonPos + 1;
+                while (newLinePos < endOffset && basePtr[newLinePos] != '\n')
+                {
+                    newLinePos++;
+                }
+
+                if(newLinePos >= endOffset && threadIndex != threadCount - 1)
+                {
+                    break; // No more new lines in this chunk
+                }
+
+                localLineCounter++;
+
+                // Extract station name and temperature
+                // Calculate hash code for station name
             }
         });
     }
