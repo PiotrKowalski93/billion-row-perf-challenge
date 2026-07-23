@@ -4,6 +4,7 @@
   <Project Path="../Level2_Stream/Level2_Stream.csproj" />
   <Project Path="../Level3_Parallel/Level3_Parallel.csproj" />
   <Project Path="../Level4_MMF/Level4_MMF.csproj" />
+  <Project Path="../Shared.UnitTests/Shared.UnitTests.csproj" Id="88d70537-891a-45a0-9a0f-9da28f4158b9" />
   <Project Path="../Shared/Shared.csproj" />
   <Project Path="DataGenerator.csproj" />
 </Solution>

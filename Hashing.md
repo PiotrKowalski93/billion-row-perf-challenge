@@ -29,8 +29,10 @@ For a normal application this is usually not a problem. However, in the 1 Billio
 Allocations cause:
 - more work for the Garbage Collector
 - more memory usage
-- worse cache locality
+- worse cache locality (*)
 - additional CPU overhead
+
+* Creating temporary strings introduces additional memory allocations and requires copying data to new heap locations. This can reduce cache efficiency because the CPU has to access more scattered memory locations instead of processing data directly from the input buffer.
 
 ## Why use XXHash?
 
