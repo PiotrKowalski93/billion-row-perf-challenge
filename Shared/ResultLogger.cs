@@ -80,5 +80,10 @@ namespace Shared
             return "{" + string.Join(", ", stats.Select(x => $"{x.Key}={x.Value}")) + "}";
         }
 
+        public static string FormatOutputStruct(IEnumerable<KeyValuePair<string, StationStatsStruct>> stats)
+        {
+            return "{" + string.Join(", ", stats.Select(x => $"{x.Key}={x.Value}")) + "}";
+        }
+
     }
 }

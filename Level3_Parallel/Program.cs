@@ -3,7 +3,7 @@ using Shared;
 using System.Diagnostics;
 using System.Text;
 
-var FilePath = GlobalConstants.FilePath_10M;
+var FilePath = GlobalConstants.FilePath_1B;
 
 Console.WriteLine("====== Level 3: Parallel Implementation ======");
 Console.WriteLine($"File: {FilePath}");

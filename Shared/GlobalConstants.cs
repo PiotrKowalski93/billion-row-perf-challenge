@@ -9,6 +9,8 @@
         public const string FilePath_100K = "C:\\Users\\Kowal\\Documents\\GitHub\\billion-row-perf-challenge\\GeneratedFiles\\measurements_100k.txt";
         public const string FilePath_1M = "C:\\Users\\Kowal\\Documents\\GitHub\\billion-row-perf-challenge\\GeneratedFiles\\measurements_1M.txt";
         public const string FilePath_10M = "C:\\Users\\Kowal\\Documents\\GitHub\\billion-row-perf-challenge\\GeneratedFiles\\measurements_10M.txt";
+        public const string FilePath_100M = "C:\\Users\\Kowal\\Documents\\GitHub\\billion-row-perf-challenge\\GeneratedFiles\\measurements_100M.txt";
+        public const string FilePath_1B = "C:\\Users\\Kowal\\Documents\\GitHub\\billion-row-perf-challenge\\GeneratedFiles\\measurements_1B.txt";
 
         public const int ExpectedStationCount = 413;
     }

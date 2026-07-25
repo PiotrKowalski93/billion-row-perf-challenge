@@ -1,8 +1,10 @@
 ﻿using Shared;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
+using System.IO.Hashing;
+using System.Text;
 
-var FilePath = GlobalConstants.FilePath_10M;
+var FilePath = GlobalConstants.FilePath_1B;
 
 Console.WriteLine("====== Level 4: Memory-Mapped Files ======");
 Console.WriteLine($"File: {FilePath}");
@@ -31,8 +33,8 @@ if(fileSize < 0)
 }
 
 var threadCount = Environment.ProcessorCount;
-var threadLocalDics = new Dictionary< int, (string Name, StationStatsStruct Stats)>[threadCount];
-var lineCounters = new int[threadCount];
+var threadLocalDics = new Dictionary<int, (string Name, StationStatsStruct Stats)>[threadCount];
+var lineCounters = new long[threadCount];
 
 using var mmf = MemoryMappedFile.CreateFromFile(FilePath, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
 
@@ -97,11 +99,34 @@ unsafe
                     break; // No more new lines in this chunk
                 }
 
-                localLineCounter++;
+                var nameSpan = new ReadOnlySpan<byte>(basePtr + position, (int)(semicolonPos - position));
+                var hash = (int)XxHash3.HashToUInt64(nameSpan);
 
-                // Extract station name and temperature
-                // Calculate hash code for station name
+                var tempLength = (int)(newLinePos - semicolonPos - 1);
+                var tempSpan = new ReadOnlySpan<byte>(basePtr + semicolonPos + 1, tempLength);
+                var tempValue = CustomParser.CustomParse(tempSpan);
+                
+                if(localStats.TryGetValue(hash, out var existingStats))
+                {
+                    // Update existing stats
+                    existingStats.Stats.Update(tempValue);
+                }
+                else
+                {
+                    // Add new stats
+                    var name = Encoding.UTF8.GetString(nameSpan);
+                    var stationStats = new StationStatsStruct();
+                    stationStats.Update(tempValue);
+
+                    localStats[hash] = (name, stationStats);
+                }
+
+                localLineCounter++;
+                position = newLinePos + 1; // Move to the next line
             }
+
+            threadLocalDics[threadIndex] = localStats;
+            lineCounters[threadIndex] = localLineCounter;
         });
     }
     finally
@@ -110,5 +135,36 @@ unsafe
         accessor.SafeMemoryMappedViewHandle.ReleasePointer();
     }
 
-    
+    // Merge results from all threads
+    var finalDict = new Dictionary<string, StationStatsStruct>(capacity: 413);
+    foreach (var localDict in threadLocalDics)
+    {
+        foreach (var (_, (name, stats)) in localDict)
+        {
+            if (!finalDict.TryGetValue(name, out var existingStats))
+            {
+                existingStats = new StationStatsStruct();
+                finalDict[name] = existingStats;
+            }
+            else
+            {
+                finalDict[name] = stats;
+            }
+            
+        }
+    }
+
+    var totalLines = lineCounters.Sum();
+    stopwatch.Stop();
+
+    var output = ResultLogger.FormatOutputStruct(finalDict.OrderBy(kvp => kvp.Key));
+
+    Console.WriteLine();
+    Console.WriteLine($"Result: {output}");
+    Console.WriteLine();
+    Console.WriteLine($"Processed {totalLines} rows");
+    Console.WriteLine($"Found {finalDict.Count()} unique stations");
+    Console.WriteLine($"Execution Time: {stopwatch.Elapsed} ms");
+
+    ResultLogger.SaveResult("Multithread", output, stopwatch.Elapsed, totalLines, finalDict.Count());
 }
