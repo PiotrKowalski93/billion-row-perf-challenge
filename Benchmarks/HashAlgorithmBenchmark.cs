@@ -187,13 +187,13 @@ namespace Benchmarks
 
         [Benchmark]
         [BenchmarkCategory("PureHash")]
-        public long PureXxHashCode()
+        public ulong PureXxHashCode()
         {
-            long sum = 0;
+            ulong sum = 0;
             foreach (var idx in measurementIndices)
             {
                 var bytes = stationBytes[idx];
-                var hash = (int)XxHash3.HashToUInt64(bytes);
+                var hash = XxHash3.HashToUInt64(bytes);
                 sum += hash;
             }
             return sum;
