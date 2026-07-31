@@ -1,4 +1,5 @@
 ﻿using System.IO.Hashing;
+using System.Text;
 
 namespace Shared
 {
@@ -21,6 +22,79 @@ namespace Shared
             capacity = Math.Min(capacity, MaxCapacity);
 
             _entries = new Entry[capacity];
+        }
+
+        public void AddOrUpdate(byte* namePtr, int nameLength, int temperature)
+        {
+            // Check if resize is needed before adding a new entry
+            if (_allowResize && _count >= _entries.Length * LoadFactor)
+            {
+                var newCapacity = Math.Min(_entries.Length * 2, MaxCapacity);
+                if(newCapacity > _entries.Length) Resize(newCapacity);
+            }
+
+            var hash = ComputeHash(namePtr, nameLength);
+            var index = (uint)(hash & (uint)(_entries.Length - 1));
+
+            while (true)
+            {
+                ref Entry entry = ref _entries[index];
+
+                if (entry.Name == null)
+                {
+                    // Empty slot found, insert new entry
+                    entry.Name = new byte[nameLength];
+                    fixed (byte* destPtr = entry.Name)
+                    {
+                        Buffer.MemoryCopy(namePtr, destPtr, nameLength, nameLength);
+                    }
+
+                    entry.StationName = Encoding.UTF8.GetString(entry.Name);
+                    entry.Hash = hash;
+                    entry.Temperature = temperature;
+                    entry.Min = temperature;
+                    entry.Max = temperature;
+                    entry.Sum = temperature;
+                    entry.Count = 1;
+
+                    _count++;
+                    return;
+                }
+
+                // Not empty slot
+                if(entry.Hash == hash && entry.Name.Length == nameLength)
+                {
+                    // Veryfi bytes match
+                    fixed (byte* destPtr = entry.Name)
+                    {
+                        var match = true;
+                        for(int i = 0; i < nameLength; i++)
+                        {
+                            if (namePtr[i] != destPtr[i])
+                            {
+                                match = false;
+                                break;
+                            }
+                        }
+
+                        // Update existing entry
+                        if (match)
+                        {
+                            entry.Temperature = temperature;
+
+                            // Min and Max is optimized by JIT to avoid branching
+                            entry.Min = Math.Min(entry.Min, temperature);
+                            entry.Max = Math.Max(entry.Max, temperature);
+                            entry.Sum += temperature;
+                            entry.Count++;
+                            return;
+                        }
+
+                        // Linear probing: move to the next index
+                        index = (index + 1) & (uint)(_entries.Length - 1);
+                    }
+                }
+            }
         }
 
         public void Resize(int newCapacity)

@@ -4,6 +4,7 @@
     {
         public byte[] Name;             // For faster comparison
         public string StationName;
+        public int Temperature;
         public ulong Hash;
         public int Min;
         public int Max;
