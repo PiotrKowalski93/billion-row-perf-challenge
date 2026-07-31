@@ -1,4 +1,5 @@
 ﻿using System.IO.Hashing;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Shared
@@ -24,6 +25,7 @@ namespace Shared
             _entries = new Entry[capacity];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddOrUpdate(byte* namePtr, int nameLength, int temperature)
         {
             // Check if resize is needed before adding a new entry
@@ -97,6 +99,7 @@ namespace Shared
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resize(int newCapacity)
         {
             var oldEntries = _entries;
@@ -167,6 +170,7 @@ namespace Shared
             return n + 1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ulong ComputeHash(byte* bytes, int length)
         {
             return XxHash3.HashToUInt64(new ReadOnlySpan<byte>(bytes, length));
