@@ -21,6 +21,26 @@ namespace Shared.UnitTests
             Assert.Equal(expected, result, 0.01);
         }
 
+        [Theory]
+        [InlineData("36.6", 366)]
+        [InlineData("-36.6", -366)]
+        [InlineData("99.9", 999)]
+        [InlineData("-99.9", -999)]
+        [InlineData("6.6", 66)]
+        [InlineData("-6.6", -66)]
+        [InlineData("-0.6", -6)]
+        [InlineData("0.6", 6)]
+        public unsafe void Should_Parse_Temperature_With_Pointer(string input, int expected)
+        {
+            var bytes = Encoding.UTF8.GetBytes(input);
+
+            fixed(byte* ptr = bytes)
+            {
+                var result = CustomParser.ParseTemperatureBranchless(ptr, bytes.Length);
+                Assert.Equal(expected, result);
+            }
+        }
+
         [Fact]
         public void Test()
         {

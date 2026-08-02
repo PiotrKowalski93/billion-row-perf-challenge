@@ -1,4 +1,6 @@
-﻿namespace Shared
+﻿using System.Runtime.CompilerServices;
+
+namespace Shared
 {
     public class CustomParser
     {
@@ -50,6 +52,37 @@
             }
 
             return !isNegative ? result : -result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int ParseTemperatureBranchless(byte* ptr, int len)
+        {
+            var sign = 1;
+
+            if (ptr[0] == '-')
+            {
+                sign = -1;
+                ptr++;
+                len--;
+            }
+
+            int value;
+
+            if (len == 3)
+            {
+                // 1.2 -> 12
+                value = ((ptr[0] - '0') * 10) + (ptr[2] - '0');
+            }
+            else
+            {
+                // 12.3 -> 123
+                value = ((ptr[0] - '0') * 100)
+                      + ((ptr[1] - '0') * 10)
+                      + (ptr[3] - '0');
+            }
+
+            // Branchless
+            return sign * value;
         }
     }
 }
