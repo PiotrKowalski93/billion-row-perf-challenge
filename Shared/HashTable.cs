@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Shared
 {
-    internal unsafe class HashTable
+    public unsafe class HashTable
     {
         private const int DefaultCapacity = 1024;
         private const int MaxCapacity = DefaultCapacity;

@@ -63,38 +63,7 @@ namespace Benchmarks
         public unsafe int IntParseBranchless()
         {
             fixed (byte* ptr = _bytes)
-                return ParseTemperatureInt(ptr, _bytes.Length);
-        }
-
-        public unsafe int ParseTemperatureInt(byte* ptr, int len)
-        {
-            var sign = 1;
-
-            if (ptr[0] == '-')
-            {
-                sign = -1;
-                ptr++;
-                len--;
-            }
-
-            int value;
-
-            if (len == 3)
-            {
-                // "D.D" -> D*10 + D   (e.g. "9.1" -> 91)
-                value = (ptr[0] - '0') * 10
-                      + (ptr[2] - '0');
-            }
-            else
-            {
-                // 32.5 => 325
-                // "DD.D" -> D*100 + D*10 + D   (e.g. "32.4" -> 324)
-                value = (ptr[0] - '0') * 100
-                      + (ptr[1] - '0') * 10
-                      + (ptr[3] - '0') * 1;
-            }
-
-            return sign * value;
+                return CustomParser.ParseTemperatureBranchless(ptr, _bytes.Length);
         }
     }
 }
