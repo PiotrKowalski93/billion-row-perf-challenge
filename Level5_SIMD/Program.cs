@@ -1,6 +1,8 @@
 ﻿using Shared;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
+using System.Numerics;
+using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 var FilePath = GlobalConstants.FilePath_1B;
@@ -46,12 +48,15 @@ var lineCounters = new long[threadCount];
 using var mmf = MemoryMappedFile.CreateFromFile(FilePath, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
 using var accessor = mmf.CreateViewAccessor(0, fileSize, MemoryMappedFileAccess.Read);
 
+var semicolonBytes = (byte)';';
+var newlineBytes = (byte)'\n';
+
 unsafe
 {
     byte* basePtr = null;
     accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref basePtr);
 
-    //BOM CHCEK
+    // Add bom check if needed
 
     Parallel.For(0, threadCount, threadIndex =>
     {
@@ -76,15 +81,81 @@ unsafe
         long localLineCounter = 0;
         var position = startOffset;
 
+        // SIMD Vectors
+        Vector256<byte> newlineVector = Vector256.Create(newlineBytes);
+        Vector256<byte> semicolonVector = Vector256.Create(semicolonBytes);
 
+        while(position < endOffset)
+        {
+            var lineStart = position;
 
-        // SIMD
+            // Semicolon search using SIMD
+            var semicolonPosition = FindByteAvx256(basePtr, position, endOffset, semicolonVector, semicolonBytes);
+            if (semicolonPosition >= endOffset) break;
 
+            // Endline search using SIMD 
+            var newlinePosition = FindByteAvx256(basePtr, position, endOffset, newlineVector, newlineBytes);
+            if (newlinePosition >= endOffset) break;
 
+            var namePtr = basePtr + lineStart;
+            var nameLength = (int)(semicolonPosition - lineStart);
 
+            var temperaturePtr = basePtr + semicolonPosition + 1;
+            var temperatureLength = (int)(semicolonPosition - newlinePosition - 1);
+            if(temperatureLength > 0 && basePtr[newlinePosition -1 ] == '\r') // Handle CRLF
+            {
+                temperatureLength--;
+            }
 
+            // Parse temperature using branchless method
+            var temperature = CustomParser.ParseTemperatureBranchless(temperaturePtr, temperatureLength);
+
+            // Update the hash table with the station name and temperature
+            localHashTable.AddOrUpdate(namePtr, nameLength, temperature);
+            localLineCounter++;
+
+            position = newlinePosition + 1;
+        }
 
         threadLocalResults[threadIndex] = localHashTable;
         lineCounters[threadIndex] = localLineCounter;
     });
+
+
+    // Merge results from all threads
+}
+
+static unsafe long FindByteAvx256(byte* basePtr, long startOffset, long endOffset,Vector256<byte> targetVector, byte targetByte)
+{ 
+    long position = startOffset;
+
+    if (Avx.IsSupported)
+    {
+        while (position + 32 <= endOffset)
+        {
+            Vector256<byte> currentVector = Avx.LoadVector256(basePtr + position);
+            Vector256<byte> comparisonResult = Avx2.CompareEqual(currentVector, targetVector);
+            uint mask = (uint)Avx2.MoveMask(comparisonResult);
+
+            // 0000 0000 0000 0000 0100 0000 0000 0000
+            if (mask != 0)
+            {
+                // Found a match, calculate the index of the first matching byte
+                int offset = BitOperations.TrailingZeroCount(mask);
+                return position + offset;
+            }
+            position += 32;
+        }
+    }
+
+    // Handle remaining bytes
+    while (position < endOffset)
+    {
+        if (basePtr[position] == targetByte)
+        {
+            return position;
+        }
+        position++;
+    }
+    return -1;
 }

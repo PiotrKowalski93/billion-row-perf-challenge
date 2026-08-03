@@ -99,6 +99,9 @@ namespace Shared
             }
         }
 
+        // TODO: Add a method to retrieve an entry by name, if needed.
+        // TODO: Add a method to remove an entry by name, if needed.
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resize(int newCapacity)
         {
@@ -140,7 +143,6 @@ namespace Shared
                     }
                 }
             }
-
         }
 
         public IEnumerable<Entry> GetEntries()
