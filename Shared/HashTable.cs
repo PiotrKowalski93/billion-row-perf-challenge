@@ -25,6 +25,8 @@ namespace Shared
             _entries = new Entry[capacity];
         }
 
+        public int Count() => _count;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddOrUpdate(byte* namePtr, int nameLength, int temperature)
         {

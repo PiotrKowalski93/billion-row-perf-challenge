@@ -8,15 +8,15 @@ using System.Runtime.Intrinsics.X86;
 var FilePath = GlobalConstants.FilePath_1B;
 
 Console.WriteLine("=== Level 5: SIMD (AVX2) Implementation ===");
-Console.WriteLine($"File: {GlobalConstants.FilePath}");
+Console.WriteLine($"File: {FilePath}");
 Console.WriteLine($"Processor Count: {Environment.ProcessorCount}");
 Console.WriteLine($"AVX2 Supported: {Avx2.IsSupported}"); // 32 bytes
 Console.WriteLine($"AVX-512 Supported: {Avx512F.IsSupported}"); // 64 bytes
 Console.WriteLine();
 
-if (!File.Exists(GlobalConstants.FilePath))
+if (!File.Exists(FilePath))
 {
-    Console.WriteLine($"ERROR: File not found at {GlobalConstants.FilePath}");
+    Console.WriteLine($"ERROR: File not found at {FilePath}");
     return;
 }
 
@@ -56,73 +56,134 @@ unsafe
     byte* basePtr = null;
     accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref basePtr);
 
-    // Add bom check if needed
-
-    Parallel.For(0, threadCount, threadIndex =>
+    try
     {
-        var chunkSize = fileSize / threadCount;
+        // Add bom check if needed
 
-        var startOffset = threadIndex * chunkSize;
-        var endOffset = (threadIndex == threadCount - 1) ? fileSize : startOffset + chunkSize;
-
-        // Adjust startOffset to the next newline character to avoid splitting lines
-        while (startOffset < fileSize && basePtr[startOffset] != '\n')
+        Parallel.For(0, threadCount, threadIndex =>
         {
-            startOffset++;
-        }
+            var chunkSize = fileSize / threadCount;
 
-        // Adjust endOffset to the previous newline character to avoid splitting lines
-        while (endOffset < fileSize && basePtr[endOffset] != '\n')
-        {
-            endOffset++;
-        }
+            var startOffset = threadIndex * chunkSize;
+            var endOffset = (threadIndex == threadCount - 1) ? fileSize : startOffset + chunkSize;
 
-        var localHashTable = new HashTable(expectedCount: GlobalConstants.ExpectedStationCount, allowResize: true);
-        long localLineCounter = 0;
-        var position = startOffset;
-
-        // SIMD Vectors
-        Vector256<byte> newlineVector = Vector256.Create(newlineBytes);
-        Vector256<byte> semicolonVector = Vector256.Create(semicolonBytes);
-
-        while(position < endOffset)
-        {
-            var lineStart = position;
-
-            // Semicolon search using SIMD
-            var semicolonPosition = FindByteAvx256(basePtr, position, endOffset, semicolonVector, semicolonBytes);
-            if (semicolonPosition >= endOffset) break;
-
-            // Endline search using SIMD 
-            var newlinePosition = FindByteAvx256(basePtr, position, endOffset, newlineVector, newlineBytes);
-            if (newlinePosition >= endOffset) break;
-
-            var namePtr = basePtr + lineStart;
-            var nameLength = (int)(semicolonPosition - lineStart);
-
-            var temperaturePtr = basePtr + semicolonPosition + 1;
-            var temperatureLength = (int)(semicolonPosition - newlinePosition - 1);
-            if(temperatureLength > 0 && basePtr[newlinePosition -1 ] == '\r') // Handle CRLF
+            if (startOffset > 0)
             {
-                temperatureLength--;
+                // Adjust startOffset to the next newline character to avoid splitting lines
+                while (startOffset < fileSize && basePtr[startOffset - 1] != '\n')
+                {
+                    startOffset++;
+                }
             }
 
-            // Parse temperature using branchless method
-            var temperature = CustomParser.ParseTemperatureBranchless(temperaturePtr, temperatureLength);
 
-            // Update the hash table with the station name and temperature
-            localHashTable.AddOrUpdate(namePtr, nameLength, temperature);
-            localLineCounter++;
+            if (endOffset < fileSize && threadIndex < threadCount - 1)
+            {
+                // Adjust endOffset to the previous newline character to avoid splitting lines
+                while (endOffset < fileSize && basePtr[endOffset - 1] != '\n')
+                {
+                    endOffset++;
+                }
+            }
 
-            position = newlinePosition + 1;
-        }
+            var localHashTable = new HashTable(expectedCount: GlobalConstants.ExpectedStationCount, allowResize: true);
+            long localLineCounter = 0;
+            var position = startOffset;
 
-        threadLocalResults[threadIndex] = localHashTable;
-        lineCounters[threadIndex] = localLineCounter;
-    });
+            // SIMD Vectors
+            Vector256<byte> newlineVector = Vector256.Create(newlineBytes);
+            Vector256<byte> semicolonVector = Vector256.Create(semicolonBytes);
+
+            while (position < endOffset)
+            {
+                var lineStart = position;
+
+                // Semicolon search using SIMD
+                var semicolonPosition = FindByteAvx256(basePtr, position, endOffset, semicolonVector, semicolonBytes);
+                if (semicolonPosition >= endOffset) break;
+
+                // Endline search using SIMD 
+                var newlinePosition = FindByteAvx256(basePtr, position, endOffset, newlineVector, newlineBytes);
+                if (newlinePosition >= endOffset) break;
+
+                var namePtr = basePtr + lineStart;
+                var nameLength = (int)(semicolonPosition - lineStart);
+
+                var temperaturePtr = basePtr + semicolonPosition + 1;
+                var temperatureLength = (int)(semicolonPosition - newlinePosition - 1);
+                if (temperatureLength > 0 && basePtr[newlinePosition - 1] == '\r') // Handle CRLF
+                {
+                    temperatureLength--;
+                }
+
+                // Parse temperature using branchless method
+                var temperature = CustomParser.ParseTemperatureBranchless(temperaturePtr, temperatureLength);
+
+                // Update the hash table with the station name and temperature
+                localHashTable.AddOrUpdate(namePtr, nameLength, temperature);
+                localLineCounter++;
+
+                position = newlinePosition + 1;
+            }
+
+            threadLocalResults[threadIndex] = localHashTable;
+            lineCounters[threadIndex] = localLineCounter;
+        });
+    }
+    finally
+    {
+        accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+    }
+
 
 
     // Merge results from all threads
+    stopwatch.Stop();
+    var finalResults = new Dictionary<string, (int Min, int Max, long Sum, long Count)>(GlobalConstants.ExpectedStationCount);
+    var totalLines = lineCounters.Sum();
+
+    foreach (var localHashTable in threadLocalResults)
+    {
+        if (localHashTable == null) continue;
+
+        foreach (var entry in localHashTable.GetEntries())
+        {
+            var name = entry.StationName;
+
+            if (finalResults.TryGetValue(name, out var existingStation))
+            {
+                finalResults[name] = (
+                    Min: Math.Min(existingStation.Min, entry.Min),
+                    Max: Math.Max(existingStation.Max, entry.Max),
+                    Sum: existingStation.Sum + entry.Sum,
+                    Count: existingStation.Count + entry.Count);
+            }
+            else
+            {
+                finalResults[name] = (entry.Min, entry.Max, entry.Sum, entry.Count);
+            }
+        }
+    }
+
+    //var finalList = finalHashTable.GetEntries().ToList();
+    var sortedResults = finalResults
+        .OrderBy(kvp => kvp.Key)
+        .Select(kvp => new KeyValuePair<string, string>(
+            kvp.Key, 
+            $"{kvp.Value.Min / 10.0:F1}/{(kvp.Value.Sum / 10.0) / kvp.Value.Count:F1}/{kvp.Value.Max / 10.0:F1}"
+        ))
+        .ToList();
+    
+    var output = "{" + string.Join(", ", sortedResults.Select(kvp => $"{kvp.Key}={kvp.Value}")) + "}";
+
+    Console.WriteLine();
+    Console.WriteLine($"Result: {output}");
+    Console.WriteLine();
+    Console.WriteLine($"Processed {totalLines} rows");
+    Console.WriteLine($"Found {finalResults.Count()} unique stations");
+    Console.WriteLine($"Execution Time: {stopwatch.Elapsed} ms");
+
+    ResultLogger.SaveResult("SIMD", output, stopwatch.Elapsed, totalLines, finalResults.Count());
 }
 
 static unsafe long FindByteAvx256(byte* basePtr, long startOffset, long endOffset,Vector256<byte> targetVector, byte targetByte)
