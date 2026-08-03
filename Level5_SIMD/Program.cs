@@ -76,7 +76,6 @@ unsafe
                 }
             }
 
-
             if (endOffset < fileSize && threadIndex < threadCount - 1)
             {
                 // Adjust endOffset to the previous newline character to avoid splitting lines
@@ -134,8 +133,6 @@ unsafe
     {
         accessor.SafeMemoryMappedViewHandle.ReleasePointer();
     }
-
-
 
     // Merge results from all threads
     stopwatch.Stop();

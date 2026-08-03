@@ -8,6 +8,7 @@ var FilePath = GlobalConstants.FilePath_1B;
 
 Console.WriteLine("====== Level 4: Memory-Mapped Files ======");
 Console.WriteLine($"File: {FilePath}");
+Console.WriteLine($"Processor Count: {Environment.ProcessorCount}");
 Console.WriteLine();
 
 // Verify if the file exists before attempting to read it
@@ -57,15 +58,21 @@ unsafe
             var endOffset = (threadIndex == threadCount - 1) ? fileSize : startOffset + chunkSize;
 
             // Adjust startOffset to the next newline character to avoid splitting lines
-            while (startOffset > fileSize && basePtr[startOffset - 1] != '\n')
+            if (startOffset > 0)
             {
-                startOffset++;
+                while (startOffset < fileSize && basePtr[startOffset - 1] != '\n')
+                {
+                    startOffset++;
+                }
             }
 
             // Adjust endOffset to the previous newline character to avoid splitting lines
-            while (endOffset < fileSize && basePtr[endOffset - 1] != '\n')
+            if (endOffset < fileSize && threadIndex < threadCount - 1)
             {
-                endOffset++;
+                while (endOffset < fileSize && basePtr[endOffset - 1] != '\n')
+                {
+                    endOffset++;
+                }
             }
 
             var localStats = new Dictionary<int, (string Name, StationStatsStruct Stats)>();
@@ -77,6 +84,7 @@ unsafe
             {
                 // We need to find semicolon position
                 var semicolonPos = position;
+
                 while (semicolonPos < endOffset && basePtr[semicolonPos] != ';')
                 {
                     semicolonPos++;
@@ -153,10 +161,10 @@ unsafe
             
         }
     }
-
-    var totalLines = lineCounters.Sum();
+    
     stopwatch.Stop();
 
+    var totalLines = lineCounters.Sum();
     var output = ResultLogger.FormatOutputStruct(finalDict.OrderBy(kvp => kvp.Key));
 
     Console.WriteLine();

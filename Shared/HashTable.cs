@@ -60,8 +60,8 @@ namespace Shared
                     entry.Max = temperature;
                     entry.Sum = temperature;
                     entry.Count = 1;
-
                     _count++;
+                    
                     return;
                 }
 
@@ -91,13 +91,14 @@ namespace Shared
                             entry.Max = Math.Max(entry.Max, temperature);
                             entry.Sum += temperature;
                             entry.Count++;
+
                             return;
                         }
-
-                        // Linear probing: move to the next index
-                        index = (index + 1) & (uint)(_entries.Length - 1);
                     }
                 }
+
+                // Linear probing: move to the next index
+                index = (index + 1) & (uint)(_entries.Length - 1);
             }
         }
 
